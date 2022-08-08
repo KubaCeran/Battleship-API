@@ -16,21 +16,28 @@ namespace Battleship_API.Controllers
         }
 
        [HttpGet("{playerId}")]
-        public ResponseDto GetBoards(int playerId)
+        public async Task<ActionResult<ResponseDto>> GetBoards(int playerId)
         {
-            return _gameService.GenerateBoardWithShipsForPlayer(playerId);
+            return await _gameService.GenerateBoardWithShipsForPlayer(playerId);
         }
 
         [HttpGet("move/{playerId}")]
-        public ResponseDto Move(int playerId)
+        public async Task<ActionResult<ResponseDto>> Move(int playerId)
         {
-            return _gameService.Move(playerId);
+            return await _gameService.Move(playerId);
         }
 
         [HttpGet("reset")]
-        public void ResetBoards()
+        public async Task<ActionResult> ResetBoards()
         {
-            _gameService.Clear();
+            if (await _gameService.Clear())
+            {
+                return Ok();
+            }
+            else
+            {
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
         }
     }
 }

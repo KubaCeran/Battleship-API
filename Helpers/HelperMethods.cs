@@ -7,79 +7,44 @@ namespace Battleship_API.Helpers
         public static List<CoordinateDto> PlaceShips()
         {
             
-                var shipsLength = new List<int> { 2, 3, 3, 4, 5 }; //hardcoded length of each ship according to the rules
+                var shipsLength = new List<int> { 2, 3, 4, 5 }; //hardcoded length of each ship according to the rules
                 var rand = new Random();
                 var takenCoordinatesDtoList = new List<CoordinateDto>();
 
                 foreach (var ship in shipsLength)
                 {
-                    bool isOpen = true;
-                    while (isOpen)
+                    bool isSearching = true;
+                    while (isSearching)
                     {
                         var startcolumn = rand.Next(1, 11);
                         var startrow = rand.Next(1, 11);
-                        var endcolumn = startcolumn;
-                        var endrow = startrow;
+                        var orientation = rand.Next(0, 2); //0 for Horizontal
 
-                        var tempList = new List<CoordinateDto>();
-
-                        tempList.Add(new CoordinateDto { X = startcolumn, Y = startrow, IsShip = true });
-
-                        var orientation = rand.Next(1, 101) % 2; //0 for Horizontal
-
-                        if (orientation == 0)
-                        {
-                            for (int i = 1; i < ship; i++)
-                            {
-                                endrow++;
-                                tempList.Add(new CoordinateDto { X = startcolumn, Y = endrow, IsShip = true });
-                            }
-                        }
-                        else
-                        {
-                            for (int i = 1; i < ship; i++)
-                            {
-                                endcolumn++;
-                                tempList.Add(new CoordinateDto { X = endcolumn, Y = startrow, IsShip = true });
-                            }
-                        }
+                        var tempList = HelperMethods.GenerateCoordinates(ship,startcolumn, startrow, orientation);
 
                         //CHECKING IF COORDINATES ARE WITHIN GIVEN BOUNDRIES
+                        var checkRow = tempList.FirstOrDefault(x => x.X > 10);
+                        var checkColumn = tempList.FirstOrDefault(x => x.Y > 10);
 
-                        if (endrow > 10 || endcolumn > 10)
+                        if (checkRow != null || checkColumn != null)
                         {
                             tempList.Clear();
-                            isOpen = true;
+                            isSearching = true;
                             continue;
                         }
 
                         //CHECKING IF COORDINATE IS TAKEN
+                        bool containsCommonItem = HelperMethods.CoordinateTaken(takenCoordinatesDtoList, tempList);
 
-                        if (takenCoordinatesDtoList.Count() == 0)
+                        if (containsCommonItem)
                         {
-                            takenCoordinatesDtoList.AddRange(tempList);
-                        }
-                        else
-                        {
-                            bool containsCommonItem = false;
-                            foreach (var temp in tempList)
-                            {
-                                if (takenCoordinatesDtoList.Any(x => x.X == temp.X && x.Y == temp.Y))
-                                {
-                                    containsCommonItem = true;
-                                    break;
-                                }
-                            }
-                            if (containsCommonItem)
-                            {
-                                tempList.Clear();
-                                isOpen = true;
-                                continue;
-                            }
-                            takenCoordinatesDtoList.AddRange(tempList);
                             tempList.Clear();
+                            isSearching = true;
+                            continue;
                         }
-                        isOpen = false;
+                        takenCoordinatesDtoList.AddRange(tempList);
+                        tempList.Clear();
+                        isSearching = false;
                     }
                 }
                 return takenCoordinatesDtoList;
@@ -102,6 +67,56 @@ namespace Battleship_API.Helpers
             }
             return allCoordinateDtoList;
         }
+
+        public static bool CoordinateTaken(List<CoordinateDto> allCoordinates, List<CoordinateDto> coordinatesToCheck)
+        {
+            var isCommon = false;
+            if(allCoordinates.Count == 0)
+            {
+                isCommon = false;
+            }
+            else 
+            {
+                foreach (var cor in coordinatesToCheck)
+                {
+                    if (allCoordinates.Any(x => x.X == cor.X && x.Y == cor.Y))
+                    {
+                        isCommon = true;
+                        break;
+                    }
+                    isCommon = false;
+                }
+            }
+            return isCommon;
+        }
+
+        public static List<CoordinateDto> GenerateCoordinates(int shipLength, int startColumn, int startRow, int orientation)
+        {
+            var endcolumn = startColumn;
+            var endrow = startRow;
+            var tempList = new List<CoordinateDto>();
+            tempList.Add(new CoordinateDto { X = startColumn, Y = startRow, IsShip = true });
+
+
+            if (orientation == 0)
+            {
+                for (int i = 1; i < shipLength; i++)
+                {
+                    endrow++;
+                    tempList.Add(new CoordinateDto { X = startColumn, Y = endrow, IsShip = true });
+                }
+            }
+            else
+            {
+                for (int i = 1; i < shipLength; i++)
+                {
+                    endcolumn++;
+                    tempList.Add(new CoordinateDto { X = endcolumn, Y = startRow, IsShip = true });
+                }
+            }
+            return tempList;
+        }
+
     }
 }
 

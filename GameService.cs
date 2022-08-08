@@ -5,9 +5,9 @@ namespace Battleship_API
 {
     public interface IGameService
     {
-        ResponseDto GenerateBoardWithShipsForPlayer(int playerId);
-        ResponseDto Move(int playerId);
-        void Clear();
+        Task<ResponseDto> GenerateBoardWithShipsForPlayer(int playerId);
+        Task<ResponseDto> Move(int playerId);
+        Task<bool> Clear();
     }
     public class GameService : IGameService
     {
@@ -17,7 +17,7 @@ namespace Battleship_API
         {
             _gameRepository = gameRepository;
         }
-        public ResponseDto GenerateBoardWithShipsForPlayer(int playerId)
+        public async Task<ResponseDto> GenerateBoardWithShipsForPlayer(int playerId)
         {
             var emptyCoordinatesList = HelperMethods.CreateEmptyBoard();
             var shipsCoordinatesList = HelperMethods.PlaceShips();
@@ -33,22 +33,26 @@ namespace Battleship_API
                 IsP2Winner =false,
                 Player = playerId
             };
-            _gameRepository.AddToDatabase(reponseDto, playerId);
-            _gameRepository.SaveChanges();
+            await _gameRepository.AddToDatabase(reponseDto, playerId);
+            await _gameRepository.SaveChanges();
             return reponseDto;
         }
-        public void Clear()
+        public async Task<bool> Clear()
         {
-            _gameRepository.ClearDatabase();
-            _gameRepository.SaveChanges();
+            if(await _gameRepository.ClearDatabase() && await _gameRepository.SaveChanges())
+            {
+                return true;
+            }
+            return false;
+            
         }
 
-        public ResponseDto Move(int playerId)
+        public async Task<ResponseDto> Move(int playerId)
         {
-            _gameRepository.GenerateHit(playerId);
-            _gameRepository.SaveChanges();
+            await _gameRepository.GenerateHit(playerId);
+            await _gameRepository.SaveChanges();
 
-            var playerBoard = _gameRepository.GetBoardForPlayer(playerId);
+            var playerBoard = await _gameRepository.GetBoardForPlayer(playerId);
             var isAllDown = playerBoard.Where(x => x.IsShip == true).All(y => y.IsHit == true);
             
             var response = new ResponseDto

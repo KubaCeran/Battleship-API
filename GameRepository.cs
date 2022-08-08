@@ -1,15 +1,16 @@
 ﻿using Battleship_API.Data;
 using Battleship_API.Data.Dto;
+using Microsoft.EntityFrameworkCore;
 
 namespace Battleship_API
 {
     public interface IGameRepository
     {
-        List<CoordinateDto> GetBoardForPlayer(int playerId);
-        void GenerateHit(int playerId);
-        void AddToDatabase(ResponseDto responseDto, int playerId);
-        void SaveChanges();
-        void ClearDatabase();
+        Task<List<CoordinateDto>> GetBoardForPlayer(int playerId);
+        Task GenerateHit(int playerId);
+        Task AddToDatabase(ResponseDto responseDto, int playerId);
+        Task<bool> SaveChanges();
+        Task<bool> ClearDatabase();
     }
     public class GameRepository : IGameRepository
     {
@@ -21,7 +22,7 @@ namespace Battleship_API
         }
         
 
-        public void AddToDatabase(ResponseDto responseDto, int playerId)
+        public async Task AddToDatabase(ResponseDto responseDto, int playerId)
         {
             var coordinateDtoList = responseDto.Coordinates;
 
@@ -36,7 +37,7 @@ namespace Battleship_API
                         IsHit = cor.IsHit,
                         IsShip = cor.IsShip
                     };
-                    _context.Player1Coordinates.Add(coordinateP1);
+                    await _context.Player1Coordinates.AddAsync(coordinateP1);
                 }
             }
             if(playerId == 2)
@@ -50,15 +51,15 @@ namespace Battleship_API
                         IsHit = cor.IsHit,
                         IsShip = cor.IsShip
                     };
-                    _context.Player2Coordinates.Add(coordinateP2);
+                    await _context.Player2Coordinates.AddAsync(coordinateP2);
                 }
             }
         }
 
-        public void ClearDatabase()
+        public async Task<bool> ClearDatabase()
         {
-            var rowsP1 = _context.Player1Coordinates.Select(x => x).ToList();
-            var rowsP2 = _context.Player2Coordinates.Select(x => x).ToList();
+            var rowsP1 = await _context.Player1Coordinates.Select(x => x).ToListAsync();
+            var rowsP2 = await _context.Player2Coordinates.Select(x => x).ToListAsync();
 
             foreach (var row in rowsP1)
             {
@@ -69,15 +70,17 @@ namespace Battleship_API
             {
                 _context.Player2Coordinates.Remove(row);
             }
+            return true;
         }
 
-        public void GenerateHit(int playerId)
+        public async Task GenerateHit(int playerId)
         {
             var rand = new Random();
 
             if (playerId == 1)
             {
-                var availableCorsList = _context.Player2Coordinates.Where(x => x.IsHit == false).ToList();
+                var allCors = await _context.Player2Coordinates.ToListAsync();
+                var availableCorsList = allCors.Where(x => x.IsHit == false).ToList();
                 var radomCorIndex = rand.Next(availableCorsList.Count);
                 var randomCor = availableCorsList[radomCorIndex];
                 var shotCor = _context.Player2Coordinates.Where(x => x == randomCor).SingleOrDefault();
@@ -85,7 +88,8 @@ namespace Battleship_API
             }
             if (playerId == 2)
             {
-                var availableCorsList = _context.Player1Coordinates.Where(x => x.IsHit == false).ToList();
+                var allCors = await _context.Player1Coordinates.ToListAsync();
+                var availableCorsList = allCors.Where(x => x.IsHit == false).ToList();
                 var radomCorIndex = rand.Next(availableCorsList.Count);
                 var randomCor = availableCorsList[radomCorIndex];
                 var shotCor = _context.Player1Coordinates.Where(x => x == randomCor).SingleOrDefault();
@@ -93,13 +97,13 @@ namespace Battleship_API
             }
         }
 
-        public List<CoordinateDto> GetBoardForPlayer(int playerId)
+        public async Task<List<CoordinateDto>> GetBoardForPlayer(int playerId)
         {
             var board = new List<CoordinateDto>();
 
             if (playerId == 1)
             {
-                var data = _context.Player2Coordinates.ToList();
+                var data = await _context.Player2Coordinates.ToListAsync();
                 foreach (var row in data)
                 {
                     board.Add(new CoordinateDto
@@ -113,7 +117,7 @@ namespace Battleship_API
             }
             if (playerId == 2)
             {
-                var data = _context.Player1Coordinates.ToList();
+                var data = await _context.Player1Coordinates.ToListAsync();
                 foreach (var row in data)
                 {
                     board.Add(new CoordinateDto
@@ -128,9 +132,9 @@ namespace Battleship_API
             return board;
         }
 
-        public void SaveChanges()
+        public async Task<bool> SaveChanges()
         {
-            _context.SaveChanges();
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Battleship_API
 
             var tempCoordinates = emptyCoordinatesList.Where(x => !shipsCoordinatesList.Any(y => y.X == x.X && y.Y == x.Y)).ToList();
             tempCoordinates.AddRange(shipsCoordinatesList);
-            var coordinatesToDatabase = tempCoordinates.OrderBy(x => x.X).ThenBy(y => y.Y).ToList();
+            var coordinatesToDatabase = tempCoordinates.OrderBy(x => x.Y).ThenBy(y => y.X).ToList();
 
             var reponseDto = new ResponseDto
             {

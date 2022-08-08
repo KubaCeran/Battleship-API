@@ -1,4 +1,4 @@
-﻿using Battleship_API.Data;
+﻿using Battleship_API.Data.Dto;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,27 +8,29 @@ namespace Battleship_API.Controllers
     [ApiController]
     public class GameController : ControllerBase
     {
-        private readonly IBoardService _boardService;
+        private readonly IGameService _gameService;
 
-        public GameController(IBoardService boardService)
+        public GameController(IGameService gameService)
         {
-            _boardService = boardService;
+            _gameService = gameService;
         }
 
-       [HttpGet("{id}")]
-        public ResponseDto GetBoards(int id)
+       [HttpGet("{playerId}")]
+        public ResponseDto GetBoards(int playerId)
         {
-            var responseDto = _boardService.PlaceShips(id);
-            _boardService.AddToDatabase(responseDto, id);
-            _boardService.SaveChanges();
-            return responseDto;
+            return _gameService.GenerateBoardWithShipsForPlayer(playerId);
+        }
+
+        [HttpGet("move/{playerId}")]
+        public ResponseDto Move(int playerId)
+        {
+            return _gameService.Move(playerId);
         }
 
         [HttpGet("reset")]
         public void ResetBoards()
         {
-            _boardService.Clear();
-            _boardService.SaveChanges();
+            _gameService.Clear();
         }
     }
 }

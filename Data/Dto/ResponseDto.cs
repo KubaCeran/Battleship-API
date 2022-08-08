@@ -1,4 +1,4 @@
-﻿namespace Battleship_API.Data
+﻿namespace Battleship_API.Data.Dto
 {
     public class ResponseDto
     {

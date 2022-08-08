@@ -89,6 +89,7 @@ namespace Battleship_API
                 var radomCorIndex = rand.Next(availableCorsList.Count);
                 var randomCor = availableCorsList[radomCorIndex];
                 var shotCor = _context.Player1Coordinates.Where(x => x == randomCor).SingleOrDefault();
+                shotCor.IsHit = true;
             }
         }
 

@@ -1,12 +1,12 @@
 ﻿using Battleship_API.Data.Dto;
+using Battleship_API.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Battleship_API.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class GameController : ControllerBase
+    
+    public class GameController : BaseApiController
     {
         private readonly IGameService _gameService;
 
@@ -15,29 +15,31 @@ namespace Battleship_API.Controllers
             _gameService = gameService;
         }
 
-       [HttpGet("{playerId}")]
-        public async Task<ActionResult<ResponseDto>> GetBoards(int playerId)
+        [HttpGet("{playerId}")]
+        public async Task<ActionResult<ServiceResult<ResponseDto>>> GetBoards(int playerId)
         {
-            return await _gameService.GenerateBoardWithShipsForPlayer(playerId);
+            var result =  await _gameService.GenerateBoardWithShipsForPlayer(playerId);
+            if (result.IsError == true)
+                return BadRequest(result.ErrorsMessage);
+            return Ok(result.Result);
         }
 
         [HttpGet("move/{playerId}")]
-        public async Task<ActionResult<ResponseDto>> Move(int playerId)
+        public async Task<ActionResult<ServiceResult<ResponseDto>>> Move(int playerId)
         {
-            return await _gameService.Move(playerId);
+            var result = await _gameService.Move(playerId);
+            if (result.IsError == true)
+                return BadRequest(result.ErrorsMessage);
+            return Ok(result.Result);
         }
 
         [HttpGet("reset")]
-        public async Task<ActionResult> ResetBoards()
+        public async Task<ActionResult<ServiceResult>> ResetBoards()
         {
-            if (await _gameService.Clear())
-            {
-                return Ok();
-            }
-            else
-            {
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
-            }
+            var result = await _gameService.Clear();
+            if (result.IsError == true)
+                return BadRequest(result.ErrorsMessage);
+            return Ok("Success");
         }
     }
 }

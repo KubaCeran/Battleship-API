@@ -1,61 +1,78 @@
 ﻿using Battleship_API.Data.Dto;
+using Battleship_API.Data.Models;
 
-namespace Battleship_API.Helpers
+namespace Battleship_API.Common
 {
     public static class HelperMethods
     {
+        public static bool CheckPlayer(int playerId)
+        {
+            if (playerId == 1 || playerId == 2)
+            {
+                return true;
+            }
+            return false;
+        }
         public static List<CoordinateDto> PlaceShips()
         {
-            
-                var shipsLength = new List<int> { 2, 3, 4, 5 }; //hardcoded length of each ship according to the rules
-                var rand = new Random();
-                var takenCoordinatesDtoList = new List<CoordinateDto>();
+            var rand = new Random();
+            var takenCoordinatesDtoList = new List<CoordinateDto>();
+            var board = new Board 
+            { 
+                Width = 10, 
+                Length = 10
+            };
 
-                foreach (var ship in shipsLength)
+            foreach (var ship in Enum.GetValues(typeof(Ship)))
+            {
+                bool isSearching = true;
+                while (isSearching)
                 {
-                    bool isSearching = true;
-                    while (isSearching)
+                    var startcolumn = rand.Next(board.StartIndex, board.EndIndexWidth);
+                    var startrow = rand.Next(board.StartIndex, board.EndIndexLength);
+                    var orientation = rand.Next(0, 2); //0 for Horizontal
+
+                    var tempList = GenerateCoordinates((int)ship, startcolumn, startrow, orientation);
+
+                    //CHECKING IF COORDINATES ARE WITHIN GIVEN BOUNDRIES
+                    var checkRow = tempList.FirstOrDefault(x => x.X > board.Length);
+                    var checkColumn = tempList.FirstOrDefault(x => x.Y > board.Width);
+
+                    if (checkRow != null || checkColumn != null)
                     {
-                        var startcolumn = rand.Next(1, 11);
-                        var startrow = rand.Next(1, 11);
-                        var orientation = rand.Next(0, 2); //0 for Horizontal
-
-                        var tempList = HelperMethods.GenerateCoordinates(ship,startcolumn, startrow, orientation);
-
-                        //CHECKING IF COORDINATES ARE WITHIN GIVEN BOUNDRIES
-                        var checkRow = tempList.FirstOrDefault(x => x.X > 10);
-                        var checkColumn = tempList.FirstOrDefault(x => x.Y > 10);
-
-                        if (checkRow != null || checkColumn != null)
-                        {
-                            tempList.Clear();
-                            isSearching = true;
-                            continue;
-                        }
-
-                        //CHECKING IF COORDINATE IS TAKEN
-                        bool containsCommonItem = HelperMethods.CoordinateTaken(takenCoordinatesDtoList, tempList);
-
-                        if (containsCommonItem)
-                        {
-                            tempList.Clear();
-                            isSearching = true;
-                            continue;
-                        }
-                        takenCoordinatesDtoList.AddRange(tempList);
                         tempList.Clear();
-                        isSearching = false;
+                        isSearching = true;
+                        continue;
                     }
+
+                    //CHECKING IF COORDINATE IS TAKEN
+                    bool containsCommonItem = CoordinateTaken(takenCoordinatesDtoList, tempList);
+
+                    if (containsCommonItem)
+                    {
+                        tempList.Clear();
+                        isSearching = true;
+                        continue;
+                    }
+                    takenCoordinatesDtoList.AddRange(tempList);
+                    tempList.Clear();
+                    isSearching = false;
                 }
-                return takenCoordinatesDtoList;
+            }
+            return takenCoordinatesDtoList;
         }
         public static List<CoordinateDto> CreateEmptyBoard()
         {
+            var board = new Board
+            {
+                Width = 10,
+                Length = 10
+            };
             var allCoordinateDtoList = new List<CoordinateDto>();
 
-            for (int i = 1; i <= 10; i++)
+            for (int i = 1; i <= board.Width; i++)
             {
-                for (int j = 1; j <= 10; j++)
+                for (int j = 1; j <= board.Length; j++)
                 {
                     var coordinate = new CoordinateDto
                     {
@@ -71,11 +88,11 @@ namespace Battleship_API.Helpers
         public static bool CoordinateTaken(List<CoordinateDto> allCoordinates, List<CoordinateDto> coordinatesToCheck)
         {
             var isCommon = false;
-            if(allCoordinates.Count == 0)
+            if (allCoordinates.Count == 0)
             {
                 isCommon = false;
             }
-            else 
+            else
             {
                 foreach (var cor in coordinatesToCheck)
                 {
@@ -116,7 +133,5 @@ namespace Battleship_API.Helpers
             }
             return tempList;
         }
-
     }
 }
-
